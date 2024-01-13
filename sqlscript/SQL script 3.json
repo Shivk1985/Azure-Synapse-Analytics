@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 3",
+	"properties": {
+		"content": {
+			"query": "USE sales;\ngo;\nSELECT TOP 10 *\nFROM OPENROWSET(\n    BULK 'csv/*.csv',\n    DATA_SOURCE='sales_data',\n    FORMAT='csv',\n    PARSER_VERSION='2.0'\n    ) AS orders\n    go;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "sales",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

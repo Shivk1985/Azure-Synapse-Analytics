@@ -2,7 +2,7 @@
 	"name": "create external database",
 	"properties": {
 		"content": {
-			"query": "CREATE DATABASE sales\nCOLLATE Latin1_General_100_BIN2_UTF8;\nGO;\nuse sales;\nGO;\nCREATE EXTERNAL DATA SOURCE sales_data WITH(\n    LOCATION='https://datalake41d0bhm.dfs.core.windows.net/files/sales/'\n   );\nGO;",
+			"query": "\nCREATE DATABASE sales\nCOLLATE Latin1_General_100_BIN2_UTF8;\nGO;\nuse sales;\nGO;\nCREATE EXTERNAL DATA SOURCE sales_data WITH(\n    LOCATION='https://datalake41d0bhm.dfs.core.windows.net/files/sales/'\n   );\nGO;\n\n",
 			"metadata": {
 				"language": "sql"
 			},
