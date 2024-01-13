@@ -2,7 +2,7 @@
 	"name": "SQL script 3",
 	"properties": {
 		"content": {
-			"query": "USE sales;\ngo;\nSELECT TOP 10 *\nFROM OPENROWSET(\n    BULK 'csv/*.csv',\n    DATA_SOURCE='sales_data',\n    FORMAT='csv',\n    PARSER_VERSION='2.0'\n    ) AS orders\n    go;",
+			"query": "USE sales;\ngo;\n/*SELECT TOP 10 *\nFROM OPENROWSET(\n    BULK 'csv/*.csv',\n    DATA_SOURCE='sales_data',\n    FORMAT='csv',\n    PARSER_VERSION='2.0'\n    ) AS orders\n    go;\n*/\n    SELECT *\nFROM  \n    OPENROWSET(\n        BULK 'parquet/year=*/*.snappy.parquet',\n        DATA_SOURCE = 'sales_data',\n        FORMAT='PARQUET'    \n    ) AS orders\nWHERE orders.filepath(1) = '2019'",
 			"metadata": {
 				"language": "sql"
 			},
