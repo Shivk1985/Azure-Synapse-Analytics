@@ -1,0 +1,20 @@
+{
+	"name": "create data source",
+	"properties": {
+		"folder": {
+			"name": "CETAS"
+		},
+		"content": {
+			"query": "\n \n CREATE EXTERNAL DATA SOURCE sales_data WITH (\n     LOCATION = 'https://datalake41d0bhm.dfs.core.windows.net/files/'\n );\n GO;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "Sales",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

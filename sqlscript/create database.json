@@ -1,0 +1,20 @@
+{
+	"name": "create database",
+	"properties": {
+		"folder": {
+			"name": "CETAS"
+		},
+		"content": {
+			"query": " /*CREATE DATABASE Sales\n   COLLATE Latin1_General_100_BIN2_UTF8;\n GO;*/\n \n \n ",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "Sales",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
