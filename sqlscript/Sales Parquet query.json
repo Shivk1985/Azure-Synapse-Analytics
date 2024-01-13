@@ -1,6 +1,9 @@
 {
 	"name": "Sales Parquet query",
 	"properties": {
+		"folder": {
+			"name": "Basic"
+		},
 		"content": {
 			"query": "SELECT YEAR(OrderDate) AS OrderYear,\n       COUNT(*) AS OrderedItems\nFROM \n    OPENROWSET(\n    BULK 'https://datalake41d0bhm.dfs.core.windows.net/files/sales/parquet/year=*/',\n    FORMAT='parquet'\n    ) AS [result]\nWHERE [result].filepath(1) IN ('2019',' 2020')\nGROUP BY YEAR(OrderDate)\nORDER BY OrderYear",
 			"metadata": {

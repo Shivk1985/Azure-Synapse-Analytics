@@ -1,11 +1,11 @@
 {
-	"name": "SQL script 2",
+	"name": "SQL script 5",
 	"properties": {
 		"folder": {
-			"name": "Basic"
+			"name": "CETAS"
 		},
 		"content": {
-			"query": "/*\nSELECT TOP 100 *\nFROM OPENROWSET(\n    BULK 'https://datalake41d0bhm.dfs.core.windows.net/files/sales/parquet/**',\nFORMAT='parquet'\n) AS result\n*/\n\n",
+			"query": "",
 			"metadata": {
 				"language": "sql"
 			},

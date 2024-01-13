@@ -1,6 +1,9 @@
 {
 	"name": "SQL script 4",
 	"properties": {
+		"folder": {
+			"name": "Basic"
+		},
 		"content": {
 			"query": "USE sales;\nGO;\nEXEC sp_rename 'alesOrderNumber','salesOrderNumber','COLUMN';",
 			"metadata": {
