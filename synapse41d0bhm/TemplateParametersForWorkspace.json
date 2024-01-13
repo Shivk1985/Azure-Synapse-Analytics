@@ -5,8 +5,14 @@
 		"workspaceName": {
 			"value": "synapse41d0bhm"
 		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
 		"synapse41d0bhm-WorkspaceDefaultSqlServer_connectionString": {
 			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synapse41d0bhm.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://manuallycreatedonjan13.dfs.core.windows.net/"
 		},
 		"synapse41d0bhm-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"value": "https://datalake41d0bhm.dfs.core.windows.net"

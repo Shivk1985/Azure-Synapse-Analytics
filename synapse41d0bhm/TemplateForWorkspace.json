@@ -7,10 +7,18 @@
 			"metadata": "Workspace name",
 			"defaultValue": "synapse41d0bhm"
 		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
 		"synapse41d0bhm-WorkspaceDefaultSqlServer_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'synapse41d0bhm-WorkspaceDefaultSqlServer'",
 			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synapse41d0bhm.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://manuallycreatedonjan13.dfs.core.windows.net/"
 		},
 		"synapse41d0bhm-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"type": "string",
@@ -21,6 +29,29 @@
 		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
 	},
 	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
 		{
 			"name": "[concat(parameters('workspaceName'), '/synapse41d0bhm-WorkspaceDefaultSqlServer')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
@@ -94,10 +125,36 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/External File Format')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "CETAS"
+				},
+				"content": {
+					"query": " CREATE EXTERNAL FILE FORMAT ParquetFormat\n     WITH (\n             FORMAT_TYPE = PARQUET,\n             DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'\n         );\n GO;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Sales",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "Basic"
+				},
 				"content": {
 					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://datalake41d0bhm.dfs.core.windows.net/files/sales/csv/**',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0'\n    ) AS [result]\n",
 					"metadata": {
@@ -118,6 +175,9 @@
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "Basic"
+				},
 				"content": {
 					"query": "/*\nSELECT TOP 100 *\nFROM OPENROWSET(\n    BULK 'https://datalake41d0bhm.dfs.core.windows.net/files/sales/parquet/**',\nFORMAT='parquet'\n) AS result\n*/\n\n",
 					"metadata": {
@@ -138,6 +198,9 @@
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "Basic"
+				},
 				"content": {
 					"query": "USE sales;\ngo;\n/*SELECT TOP 10 *\nFROM OPENROWSET(\n    BULK 'csv/*.csv',\n    DATA_SOURCE='sales_data',\n    FORMAT='csv',\n    PARSER_VERSION='2.0'\n    ) AS orders\n    go;\n*/\n    SELECT *\nFROM  \n    OPENROWSET(\n        BULK 'parquet/year=*/*.snappy.parquet',\n        DATA_SOURCE = 'sales_data',\n        FORMAT='PARQUET'    \n    ) AS orders\nWHERE orders.filepath(1) = '2019'",
 					"metadata": {
@@ -154,10 +217,82 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "Basic"
+				},
+				"content": {
+					"query": "USE sales;\nGO;\nEXEC sp_rename 'alesOrderNumber','salesOrderNumber','COLUMN';",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "sales",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 5')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "CETAS"
+				},
+				"content": {
+					"query": "USE sales;\nGO;\nSELECT Item as Product,\n     SUM(Quantity) AS ItemsSold,\n     ROUND(SUM(UnitPrice) - SUM(TaxAmount), 2) AS NetRevenue\nFROM \nOPENROWSET(\n    BULK 'sales/csv/*.csv',\n    DATA_SOURCE= 'sales_data',\n    FORMAT='CSV',\n    PARSER_VERSION = '2.0',\n    HEADER_ROW = TRUE\n) AS orders\nGROUP BY Item\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Sales",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 6')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "CETAS"
+				},
+				"content": {
+					"query": "",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Sales Parquet query')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "Basic"
+				},
 				"content": {
 					"query": "SELECT YEAR(OrderDate) AS OrderYear,\n       COUNT(*) AS OrderedItems\nFROM \n    OPENROWSET(\n    BULK 'https://datalake41d0bhm.dfs.core.windows.net/files/sales/parquet/year=*/',\n    FORMAT='parquet'\n    ) AS [result]\nWHERE [result].filepath(1) IN ('2019',' 2020')\nGROUP BY YEAR(OrderDate)\nORDER BY OrderYear",
 					"metadata": {
@@ -174,10 +309,59 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/create data source')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "CETAS"
+				},
+				"content": {
+					"query": "\n \n CREATE EXTERNAL DATA SOURCE sales_data WITH (\n     LOCATION = 'https://datalake41d0bhm.dfs.core.windows.net/files/'\n );\n GO;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Sales",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/create database')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "CETAS"
+				},
+				"content": {
+					"query": " /*CREATE DATABASE Sales\n   COLLATE Latin1_General_100_BIN2_UTF8;\n GO;*/\n \n \n ",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Sales",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/create external database')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "Basic"
+				},
 				"content": {
 					"query": "\nCREATE DATABASE sales\nCOLLATE Latin1_General_100_BIN2_UTF8;\nGO;\nuse sales;\nGO;\nCREATE EXTERNAL DATA SOURCE sales_data WITH(\n    LOCATION='https://datalake41d0bhm.dfs.core.windows.net/files/sales/'\n   );\nGO;\n\n",
 					"metadata": {
@@ -198,6 +382,9 @@
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "Basic"
+				},
 				"content": {
 					"query": "CREATE EXTERNAL FILE FORMAT CsvFormat\nWITH(\n    FORMAT_TYPE=DELIMITEDTEXT,\n    FORMAT_OPTIONS(\n        FIELD_TERMINATOR = ',',\n        STRING_DELIMITER = '\"'\n    )\n);\nGO;\nCREATE EXTERNAL TABLE dbo.orders\n(\n    alesOrderNumber VARCHAR(10),\n    SalesOrderLineNumber INT,\n    OrderDate DATE,\n    CustomerName VARCHAR(25),\n    EmailAddress VARCHAR(50),\n    Item VARCHAR(30),\n    Quantity INT,\n    UnitPrice DECIMAL(18,2),\n    TaxAmount DECIMAL (18,2)\n)\nWITH\n(\n    DATA_SOURCE =sales_data,\n    LOCATION = 'csv/*.csv',\n    FILE_FORMAT = CsvFormat\n);\nGO;\n",
 					"metadata": {
@@ -214,27 +401,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "USE sales;\nGO;\nEXEC sp_rename 'alesOrderNumber','salesOrderNumber','COLUMN';",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "sales",
-						"poolName": "Built-in"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Database1')]",
+			"name": "[concat(parameters('workspaceName'), '/LakeDB1')]",
 			"type": "Microsoft.Synapse/workspaces/databases",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -243,21 +410,852 @@
 						"ActionType": "CREATE",
 						"OldEntity": null,
 						"NewEntity": {
-							"Name": "Database1",
+							"Name": "LakeDB1",
 							"EntityType": "DATABASE",
 							"Origin": {
 								"Type": "SPARK"
 							},
 							"Properties": {
-								"IsSyMSCDMDatabase": true
+								"IsSyMSCDMDatabase": true,
+								"DerivedModelDBInfo": "{\"ModelDirectives\":{\"BaseModel\":{\"Name\":\"Airlines\",\"Version\":\"1.3.0\"}}}"
 							},
 							"Source": {
 								"Provider": "ADLS",
-								"Location": "abfss://files@datalake41d0bhm.dfs.core.windows.net/Database1",
+								"Location": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail",
 								"Properties": {
-									"FormatType": "csv",
-									"LinkedServiceName": "synapse41d0bhm-WorkspaceDefaultStorage"
+									"FormatType": "parquet",
+									"LinkedServiceName": "AzureDataLakeStorage1"
 								}
+							}
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "PoChangeOrder",
+							"EntityType": "TABLE",
+							"Namespace": {
+								"DatabaseName": "LakeDB1"
+							},
+							"Description": "A specific change or modification to a PO after the initial PO has been issued or processed.\n\nThis might be due to new requirements or in response to contractual issues that have come into play.",
+							"TableType": "EXTERNAL",
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"StorageDescriptor": {
+								"Columns": [
+									{
+										"Name": "PoChangeOrderId",
+										"Description": "The unique identifier of a Purchase Order Change Order.",
+										"OriginDataTypeName": {
+											"TypeName": "integer",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Properties": {
+												"HIVE_TYPE_STRING": "integer"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "PoChangeOrderId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PoNumber",
+										"Description": "The unique identifier of a Purchase Order.",
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Length": 20,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "PoNumber"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "ChangeOrderPlacedDate",
+										"Description": "The date that the Change Order was placed.",
+										"OriginDataTypeName": {
+											"TypeName": "date",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"DateFormat": "YYYY-MM-DD",
+												"HIVE_TYPE_STRING": "date"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "ChangeOrderPlacedDate"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "ChangeOrderEffectiveDate",
+										"Description": "The date that the Change Order is effective.",
+										"OriginDataTypeName": {
+											"TypeName": "date",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"DateFormat": "YYYY-MM-DD",
+												"HIVE_TYPE_STRING": "date"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "ChangeOrderEffectiveDate"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "ChangeOrderReasonDescription",
+										"Description": "The reason for the Change Order.",
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 2048,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "ChangeOrderReasonDescription"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "ChangeOrderAuthorizedByName",
+										"Description": "The name of the person authorizing the Change Order.",
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 256,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "ChangeOrderAuthorizedByName"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "ChangeOrderServicesProcurementSpecification",
+										"Description": "A specification or description of the specifications or details regarding PO change order.",
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 2048,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "ChangeOrderServicesProcurementSpecification"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "Note",
+										"Description": "A note, comment or additional detail regarding the PO Change Order.",
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 2048,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "Note"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PoChangeOrderStatusTypeId",
+										"Description": "The unique identifier of the PO Change Order Status.",
+										"OriginDataTypeName": {
+											"TypeName": "integer",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"HIVE_TYPE_STRING": "integer"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "PoChangeOrderStatusTypeId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "VendorId",
+										"Description": "The unique identifier of a Vendor.",
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "VendorId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "CustomerId",
+										"Description": "The unique identifier of a Customer.",
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "CustomerId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "DocumentId",
+										"Description": "The unique identifier of a Document.",
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrder.cdm.json/PoChangeOrder",
+											"Name": "DocumentId"
+										},
+										"DeltaFormatInvalidMessages": []
+									}
+								],
+								"Format": {
+									"InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+									"OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+									"FormatType": "parquet",
+									"SerializeLib": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+									"Properties": {
+										"path": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrder",
+										"FormatTypeSetToDatabaseDefault": true
+									}
+								},
+								"Source": {
+									"Provider": "ADLS",
+									"Location": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrder",
+									"Properties": {
+										"LinkedServiceName": "AzureDataLakeStorage1",
+										"LocationSetToDatabaseDefault": true
+									}
+								},
+								"Properties": {
+									"textinputformat.record.delimiter": ",",
+									"compression": "{\"type\":\"None\",\"level\":\"optimal\"}",
+									"derivedModelAttributeInfo": "{\"attributeReferences\":{\"PoChangeOrderId\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"PoChangeOrderId\"},\"PoNumber\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"PoNumber\"},\"ChangeOrderPlacedDate\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderPlacedDate\"},\"ChangeOrderEffectiveDate\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderEffectiveDate\"},\"ChangeOrderReasonDescription\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderReasonDescription\"},\"ChangeOrderAuthorizedByName\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderAuthorizedByName\"},\"ChangeOrderServicesProcurementSpecification\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderServicesProcurementSpecification\"},\"Note\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"Note\"},\"PoChangeOrderStatusTypeId\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"PoChangeOrderStatusTypeId\"},\"VendorId\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"VendorId\"},\"CustomerId\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"CustomerId\"},\"DocumentId\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"DocumentId\"}}}"
+								},
+								"Compressed": false,
+								"IsStoredAsSubdirectories": false
+							},
+							"Properties": {
+								"DerivedModelEntityInfo": "{\"entityDirectives\":{\"name\":\"PoChangeOrder\",\"description\":\"A specific change or modification to a PO after the initial PO has been issued or processed.\\n\\nThis might be due to new requirements or in response to contractual issues that have come into play.\",\"baseEntityReference\":{\"name\":\"PoChangeOrder\",\"path\":\"PoChangeOrder.cdm.json/PoChangeOrder\"},\"projectionInfo\":{\"attributes\":[{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"PoChangeOrderId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of a Purchase Order Change Order.\",\"isNullable\":false,\"name\":\"PoChangeOrderId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"PoNumber\"},\"dataType\":\"string\",\"dataTypeLength\":20,\"description\":\"The unique identifier of a Purchase Order.\",\"isNullable\":false,\"name\":\"PoNumber\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderPlacedDate\"},\"dataType\":\"date\",\"dateFormat\":\"YYYY-MM-DD\",\"description\":\"The date that the Change Order was placed.\",\"isNullable\":true,\"name\":\"ChangeOrderPlacedDate\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderEffectiveDate\"},\"dataType\":\"date\",\"dateFormat\":\"YYYY-MM-DD\",\"description\":\"The date that the Change Order is effective.\",\"isNullable\":true,\"name\":\"ChangeOrderEffectiveDate\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderReasonDescription\"},\"dataType\":\"string\",\"dataTypeLength\":2048,\"description\":\"The reason for the Change Order.\",\"isNullable\":true,\"name\":\"ChangeOrderReasonDescription\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderAuthorizedByName\"},\"dataType\":\"string\",\"dataTypeLength\":256,\"description\":\"The name of the person authorizing the Change Order.\",\"isNullable\":true,\"name\":\"ChangeOrderAuthorizedByName\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"ChangeOrderServicesProcurementSpecification\"},\"dataType\":\"string\",\"dataTypeLength\":2048,\"description\":\"A specification or description of the specifications or details regarding PO change order.\",\"isNullable\":true,\"name\":\"ChangeOrderServicesProcurementSpecification\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"Note\"},\"dataType\":\"string\",\"dataTypeLength\":2048,\"description\":\"A note, comment or additional detail regarding the PO Change Order.\",\"isNullable\":true,\"name\":\"Note\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"PoChangeOrderStatusTypeId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of the PO Change Order Status.\",\"isNullable\":true,\"name\":\"PoChangeOrderStatusTypeId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"VendorId\"},\"dataType\":\"long\",\"description\":\"The unique identifier of a Vendor.\",\"isNullable\":true,\"name\":\"VendorId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"CustomerId\"},\"dataType\":\"long\",\"description\":\"The unique identifier of a Customer.\",\"isNullable\":true,\"name\":\"CustomerId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"name\":\"DocumentId\"},\"dataType\":\"long\",\"description\":\"The unique identifier of a Document.\",\"isNullable\":true,\"name\":\"DocumentId\"}]},\"primaryKey\":[\"PoChangeOrderId\"]}}",
+								"Description": "A specific change or modification to a PO after the initial PO has been issued or processed.\n\nThis might be due to new requirements or in response to contractual issues that have come into play.",
+								"DisplayFolderInfo": "{\"name\":\"Purchasing\",\"colorCode\":\"#5F538F\"}",
+								"PrimaryKeys": "PoChangeOrderId",
+								"spark.sql.sources.provider": "parquet"
+							},
+							"Retention": 0,
+							"Temporary": false,
+							"IsRewriteEnabled": false
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "PoChangeOrderItem",
+							"EntityType": "TABLE",
+							"Namespace": {
+								"DatabaseName": "LakeDB1"
+							},
+							"Description": "The specific Item(s) that are affected by the PO Change Order.\n\nThese should be compared to the Items specified by the original PO.",
+							"TableType": "EXTERNAL",
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"StorageDescriptor": {
+								"Columns": [
+									{
+										"Name": "PoChangeOrderId",
+										"Description": "The unique identifier of a Purchase Order Change Order.",
+										"OriginDataTypeName": {
+											"TypeName": "integer",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Properties": {
+												"HIVE_TYPE_STRING": "integer"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderItem.cdm.json/PoChangeOrderItem",
+											"Name": "PoChangeOrderId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PoChangeOrderLineItemNumber",
+										"Description": "The unique identifier of the Change Order Line Item.",
+										"OriginDataTypeName": {
+											"TypeName": "integer",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Properties": {
+												"HIVE_TYPE_STRING": "integer"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderItem.cdm.json/PoChangeOrderItem",
+											"Name": "PoChangeOrderLineItemNumber"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "Quantity",
+										"Description": "The quantity of Items affected by the Change Order Item.",
+										"OriginDataTypeName": {
+											"TypeName": "decimal",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Precision": 18,
+											"Scale": 2,
+											"Properties": {
+												"HIVE_TYPE_STRING": "decimal"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderItem.cdm.json/PoChangeOrderItem",
+											"Name": "Quantity"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "QualityStandardMeasure",
+										"Description": "The specific Quality Standard metric assigned to the RFI/RFP/PO etc.\n\nExample:\n\nQuality Standard = PPM (Parts Per Million defective)\nQuality Standard Measure = 100 (100 parts may be defective per million parts)",
+										"OriginDataTypeName": {
+											"TypeName": "decimal",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Precision": 18,
+											"Scale": 8,
+											"Properties": {
+												"HIVE_TYPE_STRING": "decimal"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderItem.cdm.json/PoChangeOrderItem",
+											"Name": "QualityStandardMeasure"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "ChangeOrderReason",
+										"Description": "The reason for the associated Item change order.",
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 256,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderItem.cdm.json/PoChangeOrderItem",
+											"Name": "ChangeOrderReason"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "QualityStandardId",
+										"Description": "The unique identifier of the Quality Standard.",
+										"OriginDataTypeName": {
+											"TypeName": "integer",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"HIVE_TYPE_STRING": "integer"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderItem.cdm.json/PoChangeOrderItem",
+											"Name": "QualityStandardId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "ItemSku",
+										"Description": "The Stock Keeping Unit identifier, which is typically used for inventory-related activities.",
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 40,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderItem.cdm.json/PoChangeOrderItem",
+											"Name": "ItemSku"
+										},
+										"DeltaFormatInvalidMessages": []
+									}
+								],
+								"Format": {
+									"InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+									"OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+									"FormatType": "parquet",
+									"SerializeLib": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+									"Properties": {
+										"path": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrderItem",
+										"FormatTypeSetToDatabaseDefault": true
+									}
+								},
+								"Source": {
+									"Provider": "ADLS",
+									"Location": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrderItem",
+									"Properties": {
+										"LinkedServiceName": "AzureDataLakeStorage1",
+										"LocationSetToDatabaseDefault": true
+									}
+								},
+								"Properties": {
+									"textinputformat.record.delimiter": ",",
+									"compression": "{\"type\":\"None\",\"level\":\"optimal\"}",
+									"derivedModelAttributeInfo": "{\"attributeReferences\":{\"PoChangeOrderId\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"PoChangeOrderId\"},\"PoChangeOrderLineItemNumber\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"PoChangeOrderLineItemNumber\"},\"Quantity\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"Quantity\"},\"QualityStandardMeasure\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"QualityStandardMeasure\"},\"ChangeOrderReason\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"ChangeOrderReason\"},\"QualityStandardId\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"QualityStandardId\"},\"ItemSku\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"ItemSku\"}}}"
+								},
+								"Compressed": false,
+								"IsStoredAsSubdirectories": false
+							},
+							"Properties": {
+								"DerivedModelEntityInfo": "{\"entityDirectives\":{\"baseEntityReference\":{\"name\":\"PoChangeOrderItem\",\"path\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\"},\"description\":\"The specific Item(s) that are affected by the PO Change Order.\\n\\nThese should be compared to the Items specified by the original PO.\",\"primaryKey\":[\"PoChangeOrderId\",\"PoChangeOrderLineItemNumber\"],\"projectionInfo\":{\"attributes\":[{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"PoChangeOrderId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of a Purchase Order Change Order.\",\"isNullable\":false,\"name\":\"PoChangeOrderId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"PoChangeOrderLineItemNumber\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of the Change Order Line Item.\",\"isNullable\":false,\"name\":\"PoChangeOrderLineItemNumber\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"Quantity\"},\"dataType\":\"decimal\",\"dataTypeLength\":18,\"description\":\"The quantity of Items affected by the Change Order Item.\",\"isNullable\":true,\"scale\":2,\"name\":\"Quantity\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"QualityStandardMeasure\"},\"dataType\":\"decimal\",\"dataTypeLength\":18,\"description\":\"The specific Quality Standard metric assigned to the RFI/RFP/PO etc.\\n\\nExample:\\n\\nQuality Standard = PPM (Parts Per Million defective)\\nQuality Standard Measure = 100 (100 parts may be defective per million parts)\",\"isNullable\":true,\"scale\":8,\"name\":\"QualityStandardMeasure\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"ChangeOrderReason\"},\"dataType\":\"string\",\"dataTypeLength\":256,\"description\":\"The reason for the associated Item change order.\",\"isNullable\":true,\"name\":\"ChangeOrderReason\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"QualityStandardId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of the Quality Standard.\",\"isNullable\":true,\"name\":\"QualityStandardId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"name\":\"ItemSku\"},\"dataType\":\"string\",\"dataTypeLength\":40,\"description\":\"The Stock Keeping Unit identifier, which is typically used for inventory-related activities.\",\"isNullable\":true,\"name\":\"ItemSku\"}]}}}",
+								"Description": "The specific Item(s) that are affected by the PO Change Order.\n\nThese should be compared to the Items specified by the original PO.",
+								"DisplayFolderInfo": "{\"name\":\"Purchasing\",\"colorCode\":\"#5F538F\"}",
+								"PrimaryKeys": "PoChangeOrderId,PoChangeOrderLineItemNumber",
+								"spark.sql.sources.provider": "parquet"
+							},
+							"Retention": 0,
+							"Temporary": false,
+							"IsRewriteEnabled": false
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "PoChangeOrderRelatedParty",
+							"EntityType": "TABLE",
+							"Namespace": {
+								"DatabaseName": "LakeDB1"
+							},
+							"Description": "The party(s) have a relationship or responsibility with the Purchase Order  Change Order during the associated period.\n\nEx:\n- PO Notify Party\n- Responsible Employee\n- Buy Team Member",
+							"TableType": "EXTERNAL",
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"StorageDescriptor": {
+								"Columns": [
+									{
+										"Name": "PoChangeOrderId",
+										"Description": "The unique identifier of a Purchase Order Change Order.",
+										"OriginDataTypeName": {
+											"TypeName": "integer",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Properties": {
+												"HIVE_TYPE_STRING": "integer"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+											"Name": "PoChangeOrderId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PartyId",
+										"Description": "The unique identifier of a Party.",
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+											"Name": "PartyId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PurchasingPartyRelationshipTypeId",
+										"Description": "The unique identifier of a Purchasing Party Relationship Type.",
+										"OriginDataTypeName": {
+											"TypeName": "integer",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Properties": {
+												"HIVE_TYPE_STRING": "integer"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+											"Name": "PurchasingPartyRelationshipTypeId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PeriodStartDate",
+										"Description": "The period start date for which the party relationship is in place.",
+										"OriginDataTypeName": {
+											"TypeName": "date",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Properties": {
+												"DateFormat": "YYYY-MM-DD",
+												"HIVE_TYPE_STRING": "date"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+											"Name": "PeriodStartDate"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PeriodEndDate",
+										"Description": "The period end date for which the party relationship is in place.",
+										"OriginDataTypeName": {
+											"TypeName": "date",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"DateFormat": "YYYY-MM-DD",
+												"HIVE_TYPE_STRING": "date"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+											"Name": "PeriodEndDate"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PoChangeOrderPartyRelationshipNote",
+										"Description": "A note, comment or additional information regarding the PO Change Order - Party relationship.",
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 2048,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+											"Name": "PoChangeOrderPartyRelationshipNote"
+										},
+										"DeltaFormatInvalidMessages": []
+									}
+								],
+								"Format": {
+									"InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+									"OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+									"FormatType": "parquet",
+									"SerializeLib": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+									"Properties": {
+										"path": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrderRelatedParty",
+										"FormatTypeSetToDatabaseDefault": true
+									}
+								},
+								"Source": {
+									"Provider": "ADLS",
+									"Location": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrderRelatedParty",
+									"Properties": {
+										"LinkedServiceName": "AzureDataLakeStorage1",
+										"LocationSetToDatabaseDefault": true
+									}
+								},
+								"Properties": {
+									"textinputformat.record.delimiter": ",",
+									"compression": "{\"type\":\"None\",\"level\":\"optimal\"}",
+									"derivedModelAttributeInfo": "{\"attributeReferences\":{\"PoChangeOrderId\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PoChangeOrderId\"},\"PartyId\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PartyId\"},\"PurchasingPartyRelationshipTypeId\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PurchasingPartyRelationshipTypeId\"},\"PeriodStartDate\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PeriodStartDate\"},\"PeriodEndDate\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PeriodEndDate\"},\"PoChangeOrderPartyRelationshipNote\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PoChangeOrderPartyRelationshipNote\"}}}"
+								},
+								"Compressed": false,
+								"IsStoredAsSubdirectories": false
+							},
+							"Properties": {
+								"DerivedModelEntityInfo": "{\"entityDirectives\":{\"baseEntityReference\":{\"name\":\"PoChangeOrderRelatedParty\",\"path\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\"},\"description\":\"The party(s) have a relationship or responsibility with the Purchase Order  Change Order during the associated period.\\n\\nEx:\\n- PO Notify Party\\n- Responsible Employee\\n- Buy Team Member\",\"primaryKey\":[\"PoChangeOrderId\",\"PartyId\",\"PurchasingPartyRelationshipTypeId\",\"PeriodStartDate\"],\"projectionInfo\":{\"attributes\":[{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PoChangeOrderId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of a Purchase Order Change Order.\",\"isNullable\":false,\"name\":\"PoChangeOrderId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PartyId\"},\"dataType\":\"long\",\"description\":\"The unique identifier of a Party.\",\"isNullable\":false,\"name\":\"PartyId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PurchasingPartyRelationshipTypeId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of a Purchasing Party Relationship Type.\",\"isNullable\":false,\"name\":\"PurchasingPartyRelationshipTypeId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PeriodStartDate\"},\"dataType\":\"date\",\"dateFormat\":\"YYYY-MM-DD\",\"description\":\"The period start date for which the party relationship is in place.\",\"isNullable\":false,\"name\":\"PeriodStartDate\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PeriodEndDate\"},\"dataType\":\"date\",\"dateFormat\":\"YYYY-MM-DD\",\"description\":\"The period end date for which the party relationship is in place.\",\"isNullable\":true,\"name\":\"PeriodEndDate\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PoChangeOrderPartyRelationshipNote\"},\"dataType\":\"string\",\"dataTypeLength\":2048,\"description\":\"A note, comment or additional information regarding the PO Change Order - Party relationship.\",\"isNullable\":true,\"name\":\"PoChangeOrderPartyRelationshipNote\"}]}}}",
+								"Description": "The party(s) have a relationship or responsibility with the Purchase Order  Change Order during the associated period.\n\nEx:\n- PO Notify Party\n- Responsible Employee\n- Buy Team Member",
+								"DisplayFolderInfo": "{\"name\":\"Purchasing\",\"colorCode\":\"#5F538F\"}",
+								"PrimaryKeys": "PoChangeOrderId,PartyId,PurchasingPartyRelationshipTypeId,PeriodStartDate",
+								"spark.sql.sources.provider": "parquet"
+							},
+							"Retention": 0,
+							"Temporary": false,
+							"IsRewriteEnabled": false
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "PoChangeOrderStatus",
+							"EntityType": "TABLE",
+							"Namespace": {
+								"DatabaseName": "LakeDB1"
+							},
+							"Description": "The status of the associated PO Change Order.",
+							"TableType": "EXTERNAL",
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"StorageDescriptor": {
+								"Columns": [
+									{
+										"Name": "PoChangeOrderId",
+										"Description": "The unique identifier of a Purchase Order Change Order.",
+										"OriginDataTypeName": {
+											"TypeName": "integer",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Properties": {
+												"HIVE_TYPE_STRING": "integer"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderStatus.cdm.json/PoChangeOrderStatus",
+											"Name": "PoChangeOrderId"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PoChangeOrderStatusStartTimestamp",
+										"Description": "The start timestamp of the PO change order status.",
+										"OriginDataTypeName": {
+											"TypeName": "timestamp",
+											"IsComplexType": false,
+											"IsNullable": false,
+											"Properties": {
+												"TimestampFormat": "YYYY-MM-DD HH:MM:SS.fffffffff",
+												"HIVE_TYPE_STRING": "timestamp"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderStatus.cdm.json/PoChangeOrderStatus",
+											"Name": "PoChangeOrderStatusStartTimestamp"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PoChangeOrderStatusEndTimestamp",
+										"Description": "The end timestamp of the PO change order status.",
+										"OriginDataTypeName": {
+											"TypeName": "timestamp",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"TimestampFormat": "YYYY-MM-DD HH:MM:SS.fffffffff",
+												"HIVE_TYPE_STRING": "timestamp"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderStatus.cdm.json/PoChangeOrderStatus",
+											"Name": "PoChangeOrderStatusEndTimestamp"
+										},
+										"DeltaFormatInvalidMessages": []
+									},
+									{
+										"Name": "PoChangeOrderStatusTypeId",
+										"Description": "The unique identifier of the PO Change Order Status.",
+										"OriginDataTypeName": {
+											"TypeName": "integer",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Properties": {
+												"HIVE_TYPE_STRING": "integer"
+											}
+										},
+										"BaseAttributeReference": {
+											"Entity": "PoChangeOrderStatus.cdm.json/PoChangeOrderStatus",
+											"Name": "PoChangeOrderStatusTypeId"
+										},
+										"DeltaFormatInvalidMessages": []
+									}
+								],
+								"Format": {
+									"InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+									"OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+									"FormatType": "parquet",
+									"SerializeLib": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+									"Properties": {
+										"path": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrderStatus",
+										"FormatTypeSetToDatabaseDefault": true
+									}
+								},
+								"Source": {
+									"Provider": "ADLS",
+									"Location": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrderStatus",
+									"Properties": {
+										"LinkedServiceName": "AzureDataLakeStorage1",
+										"LocationSetToDatabaseDefault": true
+									}
+								},
+								"Properties": {
+									"textinputformat.record.delimiter": ",",
+									"compression": "{\"type\":\"None\",\"level\":\"optimal\"}",
+									"derivedModelAttributeInfo": "{\"attributeReferences\":{\"PoChangeOrderId\":{\"entity\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\",\"name\":\"PoChangeOrderId\"},\"PoChangeOrderStatusStartTimestamp\":{\"entity\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\",\"name\":\"PoChangeOrderStatusStartTimestamp\"},\"PoChangeOrderStatusEndTimestamp\":{\"entity\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\",\"name\":\"PoChangeOrderStatusEndTimestamp\"},\"PoChangeOrderStatusTypeId\":{\"entity\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\",\"name\":\"PoChangeOrderStatusTypeId\"}}}"
+								},
+								"Compressed": false,
+								"IsStoredAsSubdirectories": false
+							},
+							"Properties": {
+								"DerivedModelEntityInfo": "{\"entityDirectives\":{\"baseEntityReference\":{\"name\":\"PoChangeOrderStatus\",\"path\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\"},\"description\":\"The status of the associated PO Change Order.\",\"primaryKey\":[\"PoChangeOrderId\",\"PoChangeOrderStatusStartTimestamp\"],\"projectionInfo\":{\"attributes\":[{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\",\"name\":\"PoChangeOrderId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of a Purchase Order Change Order.\",\"isNullable\":false,\"name\":\"PoChangeOrderId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\",\"name\":\"PoChangeOrderStatusStartTimestamp\"},\"dataType\":\"timestamp\",\"description\":\"The start timestamp of the PO change order status.\",\"isNullable\":false,\"name\":\"PoChangeOrderStatusStartTimestamp\",\"timestampFormat\":\"YYYY-MM-DD HH:MM:SS.fffffffff\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\",\"name\":\"PoChangeOrderStatusEndTimestamp\"},\"dataType\":\"timestamp\",\"description\":\"The end timestamp of the PO change order status.\",\"isNullable\":true,\"name\":\"PoChangeOrderStatusEndTimestamp\",\"timestampFormat\":\"YYYY-MM-DD HH:MM:SS.fffffffff\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\",\"name\":\"PoChangeOrderStatusTypeId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of the PO Change Order Status.\",\"isNullable\":true,\"name\":\"PoChangeOrderStatusTypeId\"}]}}}",
+								"Description": "The status of the associated PO Change Order.",
+								"DisplayFolderInfo": "{\"name\":\"Purchasing\",\"colorCode\":\"#5F538F\"}",
+								"PrimaryKeys": "PoChangeOrderId,PoChangeOrderStatusStartTimestamp",
+								"spark.sql.sources.provider": "parquet"
+							},
+							"Retention": 0,
+							"Temporary": false,
+							"IsRewriteEnabled": false
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "relationship-ftqeqkobkx",
+							"EntityType": "RELATIONSHIP",
+							"Namespace": {
+								"DatabaseName": "LakeDB1"
+							},
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"FromTableName": "PoChangeOrder",
+							"ToTableName": "PoChangeOrderStatus",
+							"ColumnRelationshipInformations": [
+								{
+									"FromColumnName": "PoChangeOrderId",
+									"ToColumnName": "PoChangeOrderId"
+								}
+							],
+							"RelationshipType": 0,
+							"Properties": {
+								"DerivedModelRelationshipInfo": "{\"baseRelationship\":{\"fromEntity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"toEntity\":\"PoChangeOrderStatus.cdm.json/PoChangeOrderStatus\",\"joinPairs\":[{\"fromAttribute\":\"PoChangeOrderId\",\"toAttribute\":\"PoChangeOrderId\"}]}}"
+							}
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "relationship-lekmzugbnd",
+							"EntityType": "RELATIONSHIP",
+							"Namespace": {
+								"DatabaseName": "LakeDB1"
+							},
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"FromTableName": "PoChangeOrder",
+							"ToTableName": "PoChangeOrderRelatedParty",
+							"ColumnRelationshipInformations": [
+								{
+									"FromColumnName": "PoChangeOrderId",
+									"ToColumnName": "PoChangeOrderId"
+								}
+							],
+							"RelationshipType": 0,
+							"Properties": {
+								"DerivedModelRelationshipInfo": "{\"baseRelationship\":{\"fromEntity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"toEntity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"joinPairs\":[{\"fromAttribute\":\"PoChangeOrderId\",\"toAttribute\":\"PoChangeOrderId\"}]}}"
+							}
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "relationship-wfiveanuxb",
+							"EntityType": "RELATIONSHIP",
+							"Namespace": {
+								"DatabaseName": "LakeDB1"
+							},
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"FromTableName": "PoChangeOrder",
+							"ToTableName": "PoChangeOrderItem",
+							"ColumnRelationshipInformations": [
+								{
+									"FromColumnName": "PoChangeOrderId",
+									"ToColumnName": "PoChangeOrderId"
+								}
+							],
+							"RelationshipType": 0,
+							"Properties": {
+								"DerivedModelRelationshipInfo": "{\"baseRelationship\":{\"fromEntity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"toEntity\":\"PoChangeOrderItem.cdm.json/PoChangeOrderItem\",\"joinPairs\":[{\"fromAttribute\":\"PoChangeOrderId\",\"toAttribute\":\"PoChangeOrderId\"}]}}"
 							}
 						},
 						"Source": {
@@ -265,6 +1263,42 @@
 						}
 					}
 				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 7')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "LakeDB1",
+						"poolName": "Built-in"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 8')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "LakeDB1",
+						"poolName": "Built-in"
+					}
+				}
 			},
 			"dependsOn": []
 		}
