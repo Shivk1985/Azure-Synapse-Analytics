@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 2",
+	"properties": {
+		"content": {
+			"query": "/*\nSELECT TOP 100 *\nFROM OPENROWSET(\n    BULK 'https://datalake41d0bhm.dfs.core.windows.net/files/sales/parquet/**',\nFORMAT='parquet'\n) AS result\n*/\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
