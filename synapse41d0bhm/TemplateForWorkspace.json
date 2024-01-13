@@ -139,7 +139,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "USE sales;\ngo;\nSELECT TOP 10 *\nFROM OPENROWSET(\n    BULK 'csv/*.csv',\n    DATA_SOURCE='sales_data',\n    FORMAT='csv',\n    PARSER_VERSION='2.0'\n    ) AS orders\n    go;",
+					"query": "USE sales;\ngo;\n/*SELECT TOP 10 *\nFROM OPENROWSET(\n    BULK 'csv/*.csv',\n    DATA_SOURCE='sales_data',\n    FORMAT='csv',\n    PARSER_VERSION='2.0'\n    ) AS orders\n    go;\n*/\n    SELECT *\nFROM  \n    OPENROWSET(\n        BULK 'parquet/year=*/*.snappy.parquet',\n        DATA_SOURCE = 'sales_data',\n        FORMAT='PARQUET'    \n    ) AS orders\nWHERE orders.filepath(1) = '2019'",
 					"metadata": {
 						"language": "sql"
 					},
@@ -190,6 +190,81 @@
 					"resultLimit": 5000
 				},
 				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/create external table')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE EXTERNAL FILE FORMAT CsvFormat\nWITH(\n    FORMAT_TYPE=DELIMITEDTEXT,\n    FORMAT_OPTIONS(\n        FIELD_TERMINATOR = ',',\n        STRING_DELIMITER = '\"'\n    )\n);\nGO;\nCREATE EXTERNAL TABLE dbo.orders\n(\n    alesOrderNumber VARCHAR(10),\n    SalesOrderLineNumber INT,\n    OrderDate DATE,\n    CustomerName VARCHAR(25),\n    EmailAddress VARCHAR(50),\n    Item VARCHAR(30),\n    Quantity INT,\n    UnitPrice DECIMAL(18,2),\n    TaxAmount DECIMAL (18,2)\n)\nWITH\n(\n    DATA_SOURCE =sales_data,\n    LOCATION = 'csv/*.csv',\n    FILE_FORMAT = CsvFormat\n);\nGO;\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "sales",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "USE sales;\nGO;\nEXEC sp_rename 'alesOrderNumber','salesOrderNumber','COLUMN';",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "sales",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Database1')]",
+			"type": "Microsoft.Synapse/workspaces/databases",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"Ddls": [
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "Database1",
+							"EntityType": "DATABASE",
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"Properties": {
+								"IsSyMSCDMDatabase": true
+							},
+							"Source": {
+								"Provider": "ADLS",
+								"Location": "abfss://files@datalake41d0bhm.dfs.core.windows.net/Database1",
+								"Properties": {
+									"FormatType": "csv",
+									"LinkedServiceName": "synapse41d0bhm-WorkspaceDefaultStorage"
+								}
+							}
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					}
+				]
 			},
 			"dependsOn": []
 		}
