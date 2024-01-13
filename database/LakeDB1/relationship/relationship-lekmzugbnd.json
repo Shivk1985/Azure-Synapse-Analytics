@@ -1,0 +1,26 @@
+{
+	"name": "relationship-lekmzugbnd",
+	"properties": {
+		"Name": "relationship-lekmzugbnd",
+		"EntityType": "RELATIONSHIP",
+		"Namespace": {
+			"DatabaseName": "LakeDB1"
+		},
+		"Origin": {
+			"Type": "SPARK"
+		},
+		"FromTableName": "PoChangeOrder",
+		"ToTableName": "PoChangeOrderRelatedParty",
+		"ColumnRelationshipInformations": [
+			{
+				"FromColumnName": "PoChangeOrderId",
+				"ToColumnName": "PoChangeOrderId"
+			}
+		],
+		"RelationshipType": 0,
+		"Properties": {
+			"DerivedModelRelationshipInfo": "{\"baseRelationship\":{\"fromEntity\":\"PoChangeOrder.cdm.json/PoChangeOrder\",\"toEntity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"joinPairs\":[{\"fromAttribute\":\"PoChangeOrderId\",\"toAttribute\":\"PoChangeOrderId\"}]}}"
+		}
+	},
+	"type": "RELATIONSHIP"
+}

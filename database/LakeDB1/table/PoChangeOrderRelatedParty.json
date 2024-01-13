@@ -1,0 +1,161 @@
+{
+	"name": "PoChangeOrderRelatedParty",
+	"properties": {
+		"Name": "PoChangeOrderRelatedParty",
+		"EntityType": "TABLE",
+		"Namespace": {
+			"DatabaseName": "LakeDB1"
+		},
+		"Description": "The party(s) have a relationship or responsibility with the Purchase Order  Change Order during the associated period.\n\nEx:\n- PO Notify Party\n- Responsible Employee\n- Buy Team Member",
+		"TableType": "EXTERNAL",
+		"Origin": {
+			"Type": "SPARK"
+		},
+		"StorageDescriptor": {
+			"Columns": [
+				{
+					"Name": "PoChangeOrderId",
+					"Description": "The unique identifier of a Purchase Order Change Order.",
+					"BaseAttributeReference": {
+						"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+						"Name": "PoChangeOrderId"
+					},
+					"OriginDataTypeName": {
+						"TypeName": "integer",
+						"IsComplexType": false,
+						"IsNullable": false,
+						"Properties": {
+							"HIVE_TYPE_STRING": "integer"
+						}
+					},
+					"DeltaFormatInvalidMessages": []
+				},
+				{
+					"Name": "PartyId",
+					"Description": "The unique identifier of a Party.",
+					"BaseAttributeReference": {
+						"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+						"Name": "PartyId"
+					},
+					"OriginDataTypeName": {
+						"TypeName": "long",
+						"IsComplexType": false,
+						"IsNullable": false,
+						"Properties": {
+							"HIVE_TYPE_STRING": "long"
+						}
+					},
+					"DeltaFormatInvalidMessages": []
+				},
+				{
+					"Name": "PurchasingPartyRelationshipTypeId",
+					"Description": "The unique identifier of a Purchasing Party Relationship Type.",
+					"BaseAttributeReference": {
+						"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+						"Name": "PurchasingPartyRelationshipTypeId"
+					},
+					"OriginDataTypeName": {
+						"TypeName": "integer",
+						"IsComplexType": false,
+						"IsNullable": false,
+						"Properties": {
+							"HIVE_TYPE_STRING": "integer"
+						}
+					},
+					"DeltaFormatInvalidMessages": []
+				},
+				{
+					"Name": "PeriodStartDate",
+					"Description": "The period start date for which the party relationship is in place.",
+					"BaseAttributeReference": {
+						"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+						"Name": "PeriodStartDate"
+					},
+					"OriginDataTypeName": {
+						"TypeName": "date",
+						"IsComplexType": false,
+						"IsNullable": false,
+						"Properties": {
+							"DateFormat": "YYYY-MM-DD",
+							"HIVE_TYPE_STRING": "date"
+						}
+					},
+					"DeltaFormatInvalidMessages": []
+				},
+				{
+					"Name": "PeriodEndDate",
+					"Description": "The period end date for which the party relationship is in place.",
+					"BaseAttributeReference": {
+						"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+						"Name": "PeriodEndDate"
+					},
+					"OriginDataTypeName": {
+						"TypeName": "date",
+						"IsComplexType": false,
+						"IsNullable": true,
+						"Properties": {
+							"DateFormat": "YYYY-MM-DD",
+							"HIVE_TYPE_STRING": "date"
+						}
+					},
+					"DeltaFormatInvalidMessages": []
+				},
+				{
+					"Name": "PoChangeOrderPartyRelationshipNote",
+					"Description": "A note, comment or additional information regarding the PO Change Order - Party relationship.",
+					"BaseAttributeReference": {
+						"Entity": "PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty",
+						"Name": "PoChangeOrderPartyRelationshipNote"
+					},
+					"OriginDataTypeName": {
+						"TypeName": "string",
+						"IsComplexType": false,
+						"IsNullable": true,
+						"Length": 2048,
+						"Properties": {
+							"HIVE_TYPE_STRING": "string"
+						}
+					},
+					"DeltaFormatInvalidMessages": []
+				}
+			],
+			"Format": {
+				"InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+				"OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+				"FormatType": "parquet",
+				"SerializeLib": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+				"Properties": {
+					"path": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrderRelatedParty",
+					"FormatTypeSetToDatabaseDefault": true
+				}
+			},
+			"Source": {
+				"Provider": "ADLS",
+				"Location": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail/PoChangeOrderRelatedParty",
+				"Properties": {
+					"LinkedServiceName": "AzureDataLakeStorage1",
+					"LocationSetToDatabaseDefault": true
+				}
+			},
+			"Properties": {
+				"textinputformat.record.delimiter": ",",
+				"compression": "{\"type\":\"None\",\"level\":\"optimal\"}",
+				"derivedModelAttributeInfo": "{\"attributeReferences\":{\"PoChangeOrderId\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PoChangeOrderId\"},\"PartyId\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PartyId\"},\"PurchasingPartyRelationshipTypeId\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PurchasingPartyRelationshipTypeId\"},\"PeriodStartDate\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PeriodStartDate\"},\"PeriodEndDate\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PeriodEndDate\"},\"PoChangeOrderPartyRelationshipNote\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PoChangeOrderPartyRelationshipNote\"}}}"
+			},
+			"Compressed": false,
+			"IsStoredAsSubdirectories": false
+		},
+		"Properties": {
+			"DerivedModelEntityInfo": "{\"entityDirectives\":{\"baseEntityReference\":{\"name\":\"PoChangeOrderRelatedParty\",\"path\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\"},\"description\":\"The party(s) have a relationship or responsibility with the Purchase Order  Change Order during the associated period.\\n\\nEx:\\n- PO Notify Party\\n- Responsible Employee\\n- Buy Team Member\",\"primaryKey\":[\"PoChangeOrderId\",\"PartyId\",\"PurchasingPartyRelationshipTypeId\",\"PeriodStartDate\"],\"projectionInfo\":{\"attributes\":[{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PoChangeOrderId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of a Purchase Order Change Order.\",\"isNullable\":false,\"name\":\"PoChangeOrderId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PartyId\"},\"dataType\":\"long\",\"description\":\"The unique identifier of a Party.\",\"isNullable\":false,\"name\":\"PartyId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PurchasingPartyRelationshipTypeId\"},\"dataType\":\"integer\",\"description\":\"The unique identifier of a Purchasing Party Relationship Type.\",\"isNullable\":false,\"name\":\"PurchasingPartyRelationshipTypeId\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PeriodStartDate\"},\"dataType\":\"date\",\"dateFormat\":\"YYYY-MM-DD\",\"description\":\"The period start date for which the party relationship is in place.\",\"isNullable\":false,\"name\":\"PeriodStartDate\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PeriodEndDate\"},\"dataType\":\"date\",\"dateFormat\":\"YYYY-MM-DD\",\"description\":\"The period end date for which the party relationship is in place.\",\"isNullable\":true,\"name\":\"PeriodEndDate\"},{\"type\":\"Existing\",\"attributeReference\":{\"entity\":\"PoChangeOrderRelatedParty.cdm.json/PoChangeOrderRelatedParty\",\"name\":\"PoChangeOrderPartyRelationshipNote\"},\"dataType\":\"string\",\"dataTypeLength\":2048,\"description\":\"A note, comment or additional information regarding the PO Change Order - Party relationship.\",\"isNullable\":true,\"name\":\"PoChangeOrderPartyRelationshipNote\"}]}}}",
+			"Description": "The party(s) have a relationship or responsibility with the Purchase Order  Change Order during the associated period.\n\nEx:\n- PO Notify Party\n- Responsible Employee\n- Buy Team Member",
+			"DisplayFolderInfo": "{\"name\":\"Purchasing\",\"colorCode\":\"#5F538F\"}",
+			"PrimaryKeys": "PoChangeOrderId,PartyId,PurchasingPartyRelationshipTypeId,PeriodStartDate",
+			"spark.sql.sources.provider": "parquet",
+			"sql:IsAppendOnly": false
+		},
+		"Retention": 0,
+		"Temporary": false,
+		"IsRewriteEnabled": false
+	},
+	"type": "TABLE"
+}

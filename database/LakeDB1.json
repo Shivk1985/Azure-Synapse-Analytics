@@ -1,0 +1,23 @@
+{
+	"name": "LakeDB1",
+	"properties": {
+		"Name": "LakeDB1",
+		"EntityType": "DATABASE",
+		"Origin": {
+			"Type": "SPARK"
+		},
+		"Properties": {
+			"IsSyMSCDMDatabase": true,
+			"DerivedModelDBInfo": "{\"ModelDirectives\":{\"BaseModel\":{\"Name\":\"Airlines\",\"Version\":\"1.3.0\"}}}"
+		},
+		"Source": {
+			"Provider": "ADLS",
+			"Location": "abfss://files@manuallycreatedonjan13.dfs.core.windows.net/retail",
+			"Properties": {
+				"FormatType": "parquet",
+				"LinkedServiceName": "AzureDataLakeStorage1"
+			}
+		}
+	},
+	"type": "DATABASE"
+}
